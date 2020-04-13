@@ -1,0 +1,32 @@
+version: "3"
+services:
+  gocd-server:
+    image: gocd/gocd-server:v19.8.0
+    restart: on-failure
+    volumes:
+      - ./gocd-home:/home/go:rw
+      - ./gocd-server:/godata:rw
+    ports:
+      - "8153:8153"
+      - "8154:8154"
+
+  gocd-agent:
+    image: gocd/gocd-agent-ubuntu-16.04:v19.8.0
+    restart: on-failure
+    environment:
+      GO_SERVER_URL: http://gocd-server:8153/go
+    volumes:
+      - ./gocd-home:/home/go:rw
+      - ./gocd-agent:/godata:rw
+
+  riemann:
+    image: riemannio/riemann:0.3.5
+    entrypoint: ["/bin/riemann", "/etc/riemann/riemann.config"]
+    restart: on-failure
+    ports:
+      - "5555:5555"      # tcp events
+      - "5555:5555/udp"  # udp events
+      - "5556:5556"      # websockets
+      - "5557:5557"      # http admin
+    volumes:
+      - ./riemann/:/etc/riemann:rw
