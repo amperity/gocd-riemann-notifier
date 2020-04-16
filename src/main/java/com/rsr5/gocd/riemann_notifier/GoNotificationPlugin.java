@@ -1,9 +1,6 @@
 package com.rsr5.gocd.riemann_notifier;
 
-import com.aphyr.riemann.client.EventDSL;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.GoPlugin;
@@ -13,7 +10,7 @@ import com.thoughtworks.go.plugin.api.logging.Logger;
 import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import com.aphyr.riemann.client.RiemannClient;
+import io.riemann.riemann.client.RiemannClient;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -1,9 +1,9 @@
 package com.rsr5.gocd.riemann_notifier;
 
-import com.aphyr.riemann.Proto.Msg;
-import com.aphyr.riemann.client.EventDSL;
-import com.aphyr.riemann.client.IPromise;
-import com.aphyr.riemann.client.RiemannClient;
+import io.riemann.riemann.Proto.Msg;
+import io.riemann.riemann.client.EventDSL;
+import io.riemann.riemann.client.IPromise;
+import io.riemann.riemann.client.RiemannClient;
 import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import org.junit.Test;
 
