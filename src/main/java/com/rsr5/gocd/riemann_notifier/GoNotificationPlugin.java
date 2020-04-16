@@ -47,7 +47,7 @@ public class GoNotificationPlugin implements GoPlugin {
     @Override
     public void initializeGoApplicationAccessor(GoApplicationAccessor
                                                         goApplicationAccessor) {
-
+        LOGGER.info("Initializing plugin.");
         if (riemann == null) {
 
             PluginConfig pluginConfig = new PluginConfig();
@@ -85,10 +85,9 @@ public class GoNotificationPlugin implements GoPlugin {
             return;
         }
 
-        Iterator it = states.entrySet().iterator();
+        Iterator<Map.Entry<String, String>> it = states.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
-            System.out.println(pair.getKey() + " = " + pair.getValue());
+            Map.Entry<String, String> pair = it.next();
 
             try{
 
