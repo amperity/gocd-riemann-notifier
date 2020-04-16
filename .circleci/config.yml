@@ -1,0 +1,15 @@
+version: 2.1
+jobs:
+  build:
+    working_directory: ~/gocd-riemann-notifier
+    docker:
+      - image: circleci/openjdk:8-jdk-buster
+    steps:
+      - checkout
+      - restore_cache:
+          key: circleci-gocd-riemann-notifier-{{ checksum "pom.xml" }}
+      - run: mvn install
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: circleci-gocd-riemann-notifier-{{ checksum "pom.xml" }}
