@@ -2,6 +2,7 @@ package com.rsr5.gocd.riemann_notifier;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.thoughtworks.go.plugin.api.logging.Logger;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,6 +11,7 @@ import java.net.URL;
 import java.util.Base64;
 
 public class GoApiAccessor {
+    private static Logger LOGGER = Logger.getLoggerFor(GoApiAccessor.class);
     private PluginConfig pluginConfig = null;
 
     public GoApiAccessor(PluginConfig pluginConfig) {
@@ -24,6 +26,9 @@ public class GoApiAccessor {
         HttpURLConnection con = this.getConnection(path);
         con.setRequestProperty("Accept", "application/vnd.go.cd+json");
         con.connect();
+        if (200 != con.getResponseCode()) {
+            LOGGER.error("Error connecting to GoCD API: " + con.getResponseCode() + " " + con.getResponseMessage());
+        }
         return JsonParser.parseReader(new InputStreamReader(con.getInputStream()));
     }
 

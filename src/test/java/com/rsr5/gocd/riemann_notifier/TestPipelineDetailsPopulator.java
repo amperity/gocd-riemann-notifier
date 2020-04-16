@@ -26,7 +26,6 @@ public class TestPipelineDetailsPopulator {
         PipelineDetailsPopulator pipelineDetailsPopulator = new
                 PipelineDetailsPopulator(accessor);
 
-        String contentArtifacts = "{}";
         String requestBody = "{}";
         try {
             requestBody = this.readFile("src/test/example_notification.json");
@@ -34,6 +33,7 @@ public class TestPipelineDetailsPopulator {
             System.out.println("can't load file example_notification.json");
         }
 
+        String contentArtifacts = "{}";
         try {
             contentArtifacts = this.readFile("src/test/test_contents_artifacts.json");
         } catch (IOException e) {

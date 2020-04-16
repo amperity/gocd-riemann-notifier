@@ -16,6 +16,7 @@ public class PluginConfig {
     private long fetchInterval = 59000;
     private String username = null;
     private String password = null;
+    private String junitJobWhitelist = null;
 
     public PluginConfig() {
         String userHome = System.getProperty("user.home");
@@ -44,6 +45,10 @@ public class PluginConfig {
             if (config.hasPath("password")) {
                 password = config.getString("password");
             }
+
+            if (config.hasPath("junit_job_whitelist")) {
+                junitJobWhitelist = config.getString("junit_job_whitelist");
+            }
         }
     }
 
@@ -56,4 +61,5 @@ public class PluginConfig {
     public long getFetchInterval() { return fetchInterval; }
     public String getPassword() { return password; }
     public String getUsername() { return username; }
+    public String getJUnitJobWhitelist() { return junitJobWhitelist; }
 }
