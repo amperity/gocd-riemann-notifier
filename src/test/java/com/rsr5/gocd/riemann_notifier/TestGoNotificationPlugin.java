@@ -59,10 +59,11 @@ public class TestGoNotificationPlugin {
         GoPluginApiRequest apiRequest = mock(GoPluginApiRequest.class);
 
         when(client.event()).thenReturn(eventDSL);
-        when(eventDSL.service("gocd:pipeline1:stage1")).thenReturn(eventDSL);
+        when(eventDSL.service(anyString())).thenReturn(eventDSL);
         when(eventDSL.description(anyString())).thenReturn(eventDSL);
-        when(eventDSL.state("Passed")).thenReturn(eventDSL);
+        when(eventDSL.state(anyString())).thenReturn(eventDSL);
         when(eventDSL.send()).thenReturn(msg);
+
         try {
             when(msg.deref(5000, java.util.concurrent.TimeUnit.MILLISECONDS))
                     .thenReturn(null);
@@ -88,10 +89,7 @@ public class TestGoNotificationPlugin {
 
         goNotificationPlugin.handleStageNotification(apiRequest);
 
-        //verify(eventDSL, times(1)).service("fridge");
-        //verify(eventDSL, times(1)).state("Info");
-        //verify(eventDSL, times(1)).metric(5.3);
-        //verify(eventDSL, times(1)).tags("appliance", "cold");
-        //verify(eventDSL, times(1)).send();
+        verify(eventDSL, times(1)).service("gocd:pipeline1:stage1");
+        verify(eventDSL, times(1)).state("Passed");
     }
 }
