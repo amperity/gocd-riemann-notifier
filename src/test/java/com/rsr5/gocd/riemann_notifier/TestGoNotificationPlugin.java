@@ -1,15 +1,14 @@
 package com.rsr5.gocd.riemann_notifier;
 
+import com.google.gson.JsonParser;
+import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import io.riemann.riemann.Proto.Msg;
 import io.riemann.riemann.client.EventDSL;
 import io.riemann.riemann.client.IPromise;
 import io.riemann.riemann.client.RiemannClient;
-import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -31,12 +30,9 @@ public class TestGoNotificationPlugin {
         RiemannClient client = mock(RiemannClient.class);
         EventDSL eventDSL = mock(EventDSL.class);
         IPromise<Msg> msg = (IPromise<Msg>) mock(IPromise.class);
-        HttpURLConnection request = mock(HttpURLConnection.class);
-        RetrievePipelineHistory retrieve = mock(RetrievePipelineHistory
-                .class);
+        GoApiAccessor accessor = mock(GoApiAccessor.class);
         PipelineDetailsPopulator pipelineDetailsPopulator = new
                 PipelineDetailsPopulator();
-        pipelineDetailsPopulator.retrievePipelineInstance = retrieve;
 
         GoNotificationPlugin goNotificationPlugin = new GoNotificationPlugin();
         goNotificationPlugin.riemann = client;
@@ -71,16 +67,9 @@ public class TestGoNotificationPlugin {
             // This won't happen, because Mockito.
         }
 
-
         try {
-            when(request.getContent()).thenReturn(new ByteArrayInputStream
-                    (content.getBytes("UTF-8")));
-        } catch (IOException e) {
-            // This will not happen, because Mockito.
-        }
-
-        try {
-            when(retrieve.download("pipeline1")).thenReturn(request);
+            when(accessor.get("/go/api/pipelines/pipeline1/history"))
+                .thenReturn(JsonParser.parseString(content));
         } catch (IOException e) {
             // This will not happen, because Mockito.
         }
