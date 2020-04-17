@@ -36,7 +36,7 @@ public class GoApiAccessor {
         return con;
     }
 
-    private Boolean authRequired() {
+    private boolean authRequired() {
         return this.pluginConfig.getUsername() != null && this.pluginConfig.getPassword() != null;
     }
 
