@@ -26,13 +26,6 @@ public class PipelineDetailsPopulator {
         return json;
     }
 
-    protected JsonElement downloadPipelineDetails(String pipelineName) throws IOException {
-        String path = "/go/api/pipelines/" + pipelineName + "/history";
-        JsonObject json = accessor.get(path).getAsJsonObject();
-        JsonArray pipelines = json.get("pipelines").getAsJsonArray();
-        return pipelines.get(0);
-    }
-
     protected JsonObject downloadPipelineArtifacts(String pipelineName,
                                                    String stageName,
                                                    String pipelineCounter,
@@ -60,17 +53,13 @@ public class PipelineDetailsPopulator {
             String stage = stageObject.get("name").getAsString();
             String stageCounter = stageObject.get("counter").getAsString();
 
-            JsonElement extraDetails = downloadPipelineDetails(pipeline);
-            json = mergeInPipelineInstanceDetails("x-pipeline-instance" +
-                    "-details", json, extraDetails);
-
             json.add("x-pipeline-artifacts", new JsonObject());
             JsonArray jobArtifacts = new JsonArray();
 
             JsonArray jobs = stageObject.get("jobs").getAsJsonArray();
             for(final JsonElement job : jobs) {
 
-                extraDetails = downloadPipelineArtifacts(pipeline, stage,
+                JsonObject extraDetails = downloadPipelineArtifacts(pipeline, stage,
                         pipelineCounter, stageCounter, job.getAsJsonObject().get("name").getAsString());
                 jobArtifacts.add(extraDetails);
             }
