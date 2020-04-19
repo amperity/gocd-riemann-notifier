@@ -26,7 +26,6 @@ public class TestPipelineDetailsPopulator {
         PipelineDetailsPopulator pipelineDetailsPopulator = new
                 PipelineDetailsPopulator(accessor);
 
-        String contentHistory = "{}";
         String contentArtifacts = "{}";
         String requestBody = "{}";
         try {
@@ -36,22 +35,9 @@ public class TestPipelineDetailsPopulator {
         }
 
         try {
-            contentHistory = this.readFile("src/test/test_content.json");
-        } catch (IOException e) {
-            System.out.println("can't load file test_content.json");
-        }
-
-        try {
             contentArtifacts = this.readFile("src/test/test_contents_artifacts.json");
         } catch (IOException e) {
             System.out.println("can't load file test_contents_artifacts.json");
-        }
-
-        try {
-            when(accessor.get("/go/api/pipelines/pipeline1/history"))
-                .thenReturn(JsonParser.parseString(contentHistory));
-        } catch (IOException e) {
-            // This will not happen, because Mockito.
         }
 
         try {
@@ -63,10 +49,8 @@ public class TestPipelineDetailsPopulator {
 
         JsonObject json = pipelineDetailsPopulator.extendMessage(requestBody);
 
-        verify(accessor).get("/go/api/pipelines/pipeline1/history");
         verify(accessor).get("/go/files/pipeline1/1/stage1/1/job1.json");
 
-        assert (json.has("x-pipeline-instance-details"));
         assert (json.has("x-pipeline-artifacts"));
     }
 
@@ -84,7 +68,7 @@ public class TestPipelineDetailsPopulator {
         }
 
         try {
-            when(accessor.get("/go/api/pipelines/pipeline1/history"))
+            when(accessor.get("/go/files/pipeline1/1/stage1/1/job1.json"))
                 .thenThrow(IOException.class);
         } catch (IOException e) {
             // This will not happen, because Mockito.
@@ -92,7 +76,7 @@ public class TestPipelineDetailsPopulator {
 
         JsonObject json = pipelineDetailsPopulator.extendMessage(requestBody);
 
-        verify(accessor).get("/go/api/pipelines/pipeline1/history");
+        verify(accessor).get("/go/files/pipeline1/1/stage1/1/job1.json");
 
         assert (json.has("x-pipeline-error"));
     }
