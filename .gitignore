@@ -3,6 +3,7 @@
 .project
 .settings
 docker/gocd-agent/*
+docker/gocd-home/*
 docker/gocd-server/*
 gocd-riemann-notifier.iml
 target
