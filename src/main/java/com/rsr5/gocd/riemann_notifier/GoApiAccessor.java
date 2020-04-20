@@ -42,7 +42,7 @@ public class GoApiAccessor {
 
     private String getAuthHeader() {
         String authString = this.pluginConfig.getUsername() + ":" + this.pluginConfig.getPassword();
-        return Base64.getEncoder().encodeToString(authString.getBytes());
+        return "Basic " + Base64.getEncoder().encodeToString(authString.getBytes());
     }
 
 }
