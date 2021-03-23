@@ -2,6 +2,7 @@ package com.rsr5.gocd.riemann_notifier;
 
 import com.google.gson.JsonParser;
 import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
+import io.riemann.riemann.Proto.Event;
 import io.riemann.riemann.Proto.Msg;
 import io.riemann.riemann.client.EventDSL;
 import io.riemann.riemann.client.IPromise;
@@ -55,9 +56,14 @@ public class TestGoNotificationPlugin {
         GoPluginApiRequest apiRequest = mock(GoPluginApiRequest.class);
 
         when(client.event()).thenReturn(eventDSL);
+        when(client.sendEvent(any(Event.class))).thenReturn(msg);
+        when(client.sendEvents(anyListOf(Event.class))).thenReturn(msg);
         when(eventDSL.service(anyString())).thenReturn(eventDSL);
         when(eventDSL.description(anyString())).thenReturn(eventDSL);
         when(eventDSL.state(anyString())).thenReturn(eventDSL);
+        when(eventDSL.time(anyLong())).thenReturn(eventDSL);
+        when(eventDSL.metric(anyLong())).thenReturn(eventDSL);
+        when(eventDSL.attribute(anyString(), anyString())).thenReturn(eventDSL);
         when(eventDSL.send()).thenReturn(msg);
 
         try {
@@ -79,6 +85,8 @@ public class TestGoNotificationPlugin {
         goNotificationPlugin.handleStageNotification(apiRequest);
 
         verify(eventDSL, times(1)).service("gocd:pipeline1:stage1");
-        verify(eventDSL, times(1)).state("Passed");
+        verify(eventDSL, times(1)).service("gocd:stage-duration");
+        verify(eventDSL, times(1)).service("gocd:job-duration");
+        verify(eventDSL, times(3)).state("Passed");
     }
 }
