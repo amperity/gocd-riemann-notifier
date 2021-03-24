@@ -168,28 +168,36 @@ public class GoNotificationPlugin implements GoPlugin {
             public final Instant end;
 
             public JobData(JsonObject json) {
+                String start = safeGetAsString(json, "schedule-time");
+                String end = safeGetAsString(json, "complete-time");
+
                 this.name = safeGetAsString(json, "name");
                 this.result = safeGetAsString(json, "result");
-                this.start = Instant.parse(safeGetAsString(json, "schedule-time"));
-                this.end = Instant.parse(safeGetAsString(json, "complete-time"));
+                this.start = start == null ? null : Instant.parse(start);
+                this.end = end == null ? null : Instant.parse(end);
             }
 
-            public long getDurationInSeconds() {
-                return ChronoUnit.SECONDS.between(this.start, this.end);
+            public Long getDurationInSeconds() {
+                if (this.start != null && this.end != null) {
+                    return ChronoUnit.SECONDS.between(this.start, this.end);
+                }
+                return null;
             }
         }
 
         public StageData(JsonObject json) {
             JsonObject pipelineObject = (JsonObject) json.get("pipeline");
             JsonObject stageObject = (JsonObject) pipelineObject.get("stage");
+            String start = safeGetAsString(stageObject, "create-time");
+            String end = safeGetAsString(stageObject, "last-transition-time");
             List<JobData> jobs = new ArrayList<JobData>();
 
             this.pipeline = safeGetAsString(pipelineObject, "name");
             this.counter = safeGetAsString(pipelineObject, "counter");
             this.stage = safeGetAsString(stageObject, "name");
             this.state = safeGetAsString(stageObject, "state");
-            this.start = Instant.parse(safeGetAsString(stageObject, "create-time"));
-            this.end = Instant.parse(safeGetAsString(stageObject, "last-transition-time"));
+            this.start = start == null ? null : Instant.parse(start);
+            this.end = end == null ? null : Instant.parse(end);
 
             JsonArray jobsArray = stageObject.getAsJsonArray("jobs");
             if (jobsArray != null) {
@@ -204,8 +212,11 @@ public class GoNotificationPlugin implements GoPlugin {
             return "gocd:" + this.pipeline + ":" + this.stage;
         }
 
-        public long getDurationInSeconds() {
-            return ChronoUnit.SECONDS.between(this.start, this.end);
+        public Long getDurationInSeconds() {
+            if (this.start != null && this.end != null) {
+                return ChronoUnit.SECONDS.between(this.start, this.end);
+            }
+            return null;
         }
     }
 
