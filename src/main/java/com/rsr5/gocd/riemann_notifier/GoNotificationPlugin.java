@@ -153,19 +153,19 @@ public class GoNotificationPlugin implements GoPlugin {
     }
 
     final class StageData {
-        public String pipeline;
-        public String stage;
-        public String state;
-        public String counter;
-        public Instant start;
-        public Instant end;
-        public List<JobData> jobs;
+        public final String pipeline;
+        public final String stage;
+        public final String state;
+        public final String counter;
+        public final Instant start;
+        public final Instant end;
+        public final List<JobData> jobs;
 
         final class JobData {
-            public String name;
-            public String result;
-            public Instant start;
-            public Instant end;
+            public final String name;
+            public final String result;
+            public final Instant start;
+            public final Instant end;
 
             public JobData(JsonObject json) {
                 this.name = safeGetAsString(json, "name");
@@ -182,6 +182,7 @@ public class GoNotificationPlugin implements GoPlugin {
         public StageData(JsonObject json) {
             JsonObject pipelineObject = (JsonObject) json.get("pipeline");
             JsonObject stageObject = (JsonObject) pipelineObject.get("stage");
+            List<JobData> jobs = new ArrayList<JobData>();
 
             this.pipeline = safeGetAsString(pipelineObject, "name");
             this.counter = safeGetAsString(pipelineObject, "counter");
@@ -189,7 +190,6 @@ public class GoNotificationPlugin implements GoPlugin {
             this.state = safeGetAsString(stageObject, "state");
             this.start = Instant.parse(safeGetAsString(stageObject, "create-time"));
             this.end = Instant.parse(safeGetAsString(stageObject, "last-transition-time"));
-            this.jobs = new ArrayList<JobData>();
 
             JsonArray jobsArray = stageObject.getAsJsonArray("jobs");
             if (jobsArray != null) {
@@ -197,6 +197,7 @@ public class GoNotificationPlugin implements GoPlugin {
                     jobs.add(new JobData((JsonObject) job));
                 }
             }
+            this.jobs = Collections.unmodifiableList(jobs);
         }
 
         public String getPipelineServiceName() {
@@ -251,19 +252,17 @@ public class GoNotificationPlugin implements GoPlugin {
                 // necessarily useful for summation, but enables analysis of
                 // what's making a stage take a long time (and what isn't),
                 // for example.
-                if (notification.jobs != null) {
-                    for (StageData.JobData job : notification.jobs) {
-                        events.add(riemann.event().
-                                   service("gocd:job-duration").
-                                   time(job.start.getEpochSecond()).
-                                   state(job.result).
-                                   metric(job.getDurationInSeconds()).
-                                   attribute("pipeline", notification.pipeline).
-                                   attribute("stage", notification.stage).
-                                   attribute("job", job.name).
-                                   attribute("run-id", notification.counter).
-                                   build());
-                    }
+                for (StageData.JobData job : notification.jobs) {
+                    events.add(riemann.event().
+                               service("gocd:job-duration").
+                               time(job.start.getEpochSecond()).
+                               state(job.result).
+                               metric(job.getDurationInSeconds()).
+                               attribute("pipeline", notification.pipeline).
+                               attribute("stage", notification.stage).
+                               attribute("job", job.name).
+                               attribute("run-id", notification.counter).
+                               build());
                 }
             }
 
