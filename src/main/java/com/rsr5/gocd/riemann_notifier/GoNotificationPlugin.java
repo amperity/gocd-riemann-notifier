@@ -1,6 +1,8 @@
 package com.rsr5.gocd.riemann_notifier;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.GoPlugin;
@@ -10,9 +12,13 @@ import com.thoughtworks.go.plugin.api.logging.Logger;
 import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
+import io.riemann.riemann.client.IPromise;
 import io.riemann.riemann.client.RiemannClient;
+import io.riemann.riemann.Proto.Event;
 
 import java.io.IOException;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -138,23 +144,80 @@ public class GoNotificationPlugin implements GoPlugin {
         return renderJSON(SUCCESS_RESPONSE_CODE, response);
     }
 
-    private String service(JsonObject json) {
-        JsonObject pipelineObject, stageObject;
-        pipelineObject = (JsonObject) json.get("pipeline");
-        stageObject = (JsonObject) pipelineObject.get("stage");
-
-        String pipeline = pipelineObject.get("name").getAsString();
-        String stage = stageObject.get("name").getAsString();
-
-        return "gocd:" + pipeline + ":" + stage;
+    private String safeGetAsString(JsonObject json, String property) {
+        JsonElement element = json.get(property);
+        if (element != null && element.isJsonPrimitive()) {
+            return element.getAsString();
+        }
+        return null;
     }
 
-    private String state(JsonObject json) {
-        JsonObject pipelineObject, stageObject;
-        pipelineObject = (JsonObject) json.get("pipeline");
-        stageObject = (JsonObject) pipelineObject.get("stage");
+    final class StageData {
+        public final String pipeline;
+        public final String stage;
+        public final String state;
+        public final String counter;
+        public final Instant start;
+        public final Instant end;
+        public final List<JobData> jobs;
 
-        return stageObject.get("state").getAsString();
+        final class JobData {
+            public final String name;
+            public final String result;
+            public final Instant start;
+            public final Instant end;
+
+            public JobData(JsonObject json) {
+                String start = safeGetAsString(json, "schedule-time");
+                String end = safeGetAsString(json, "complete-time");
+
+                this.name = safeGetAsString(json, "name");
+                this.result = safeGetAsString(json, "result");
+                this.start = start == null ? null : Instant.parse(start);
+                this.end = end == null ? null : Instant.parse(end);
+            }
+
+            public Long getDurationInSeconds() {
+                if (this.start != null && this.end != null) {
+                    return ChronoUnit.SECONDS.between(this.start, this.end);
+                }
+                return null;
+            }
+        }
+
+        public StageData(JsonObject json) {
+            JsonObject pipelineObject = (JsonObject) json.get("pipeline");
+            JsonObject stageObject = (JsonObject) pipelineObject.get("stage");
+            String start = safeGetAsString(stageObject, "create-time");
+            String end = safeGetAsString(stageObject, "last-transition-time");
+            List<JobData> jobs = new ArrayList<JobData>();
+
+            this.pipeline = safeGetAsString(pipelineObject, "name");
+            this.counter = safeGetAsString(pipelineObject, "counter");
+            this.stage = safeGetAsString(stageObject, "name");
+            this.state = safeGetAsString(stageObject, "state");
+            this.start = start == null ? null : Instant.parse(start);
+            this.end = end == null ? null : Instant.parse(end);
+
+            JsonArray jobsArray = stageObject.getAsJsonArray("jobs");
+            if (jobsArray != null) {
+                for (JsonElement job : jobsArray) {
+                    jobs.add(new JobData((JsonObject) job));
+                }
+            }
+            this.jobs = Collections.unmodifiableList(jobs);
+        }
+
+        public String getPipelineServiceName() {
+            return "gocd:" + this.pipeline + ":" + this.stage;
+        }
+
+        public Long getDurationInSeconds() {
+            if (this.start != null && this.end != null) {
+                return ChronoUnit.SECONDS.between(this.start, this.end);
+            }
+            return null;
+        }
     }
 
     protected GoPluginApiResponse handleStageNotification(
@@ -171,11 +234,50 @@ public class GoNotificationPlugin implements GoPlugin {
                 .requestBody());
 
         try {
-            riemann.event().
-                    service(this.service(json)).
-                    state(this.state(json)).
-                    description(json.toString()).
-                    send().
+            List<Event> events = new ArrayList<>();
+            StageData notification = new StageData(json);
+
+            events.add(riemann.event().
+                       service(notification.getPipelineServiceName()).
+                       state(notification.state).
+                       description(json.toString()).
+                       build());
+
+            if (notification.state.equals("Failed") ||
+                notification.state.equals("Passed")) {
+
+                // output stage timing - add all the stage timings together
+                // for a given (pipeline, run-id) pair to get total pipeline
+                // execution time
+                events.add(riemann.event().
+                           service("gocd:stage-duration").
+                           time(notification.start.getEpochSecond()).
+                           state(notification.state).
+                           metric(notification.getDurationInSeconds()).
+                           attribute("pipeline", notification.pipeline).
+                           attribute("stage", notification.stage).
+                           attribute("run-id", notification.counter).
+                           build());
+
+                // jobs in a stage can run in parallel so this metric isn't
+                // necessarily useful for summation, but enables analysis of
+                // what's making a stage take a long time (and what isn't),
+                // for example.
+                for (StageData.JobData job : notification.jobs) {
+                    events.add(riemann.event().
+                               service("gocd:job-duration").
+                               time(job.start.getEpochSecond()).
+                               state(job.result).
+                               metric(job.getDurationInSeconds()).
+                               attribute("pipeline", notification.pipeline).
+                               attribute("stage", notification.stage).
+                               attribute("job", job.name).
+                               attribute("run-id", notification.counter).
+                               build());
+                }
+            }
+
+            riemann.sendEvents(events).
                     deref(5000, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (IOException e) {
             LOGGER.error("failed to notify pipeline listener", e);
