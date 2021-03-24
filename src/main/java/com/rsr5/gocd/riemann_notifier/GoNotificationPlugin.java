@@ -144,7 +144,7 @@ public class GoNotificationPlugin implements GoPlugin {
         return renderJSON(SUCCESS_RESPONSE_CODE, response);
     }
 
-    private String safeGetAsString(JsonObject json, String property) {
+    private static String safeGetAsString(JsonObject json, String property) {
         JsonElement element = json.get(property);
         if (element != null && element.isJsonPrimitive()) {
             return element.getAsString();
@@ -152,7 +152,18 @@ public class GoNotificationPlugin implements GoPlugin {
         return null;
     }
 
-    final class StageData {
+    private static Instant safeInstantParse(String s) {
+        if (s != null && !s.equals("")) {
+            try {
+                return Instant.parse(s);
+            } catch(Exception e) {
+                LOGGER.debug("Encountered unparseable instant value", e);
+            }
+        }
+        return null;
+    }
+
+    static final class StageData {
         public final String pipeline;
         public final String stage;
         public final String state;
@@ -173,8 +184,8 @@ public class GoNotificationPlugin implements GoPlugin {
 
                 this.name = safeGetAsString(json, "name");
                 this.result = safeGetAsString(json, "result");
-                this.start = start == null ? null : Instant.parse(start);
-                this.end = end == null ? null : Instant.parse(end);
+                this.start = safeInstantParse(start);
+                this.end = safeInstantParse(end);
             }
 
             public Long getDurationInSeconds() {
@@ -196,8 +207,8 @@ public class GoNotificationPlugin implements GoPlugin {
             this.counter = safeGetAsString(pipelineObject, "counter");
             this.stage = safeGetAsString(stageObject, "name");
             this.state = safeGetAsString(stageObject, "state");
-            this.start = start == null ? null : Instant.parse(start);
-            this.end = end == null ? null : Instant.parse(end);
+            this.start = safeInstantParse(start);
+            this.end = safeInstantParse(end);
 
             JsonArray jobsArray = stageObject.getAsJsonArray("jobs");
             if (jobsArray != null) {
