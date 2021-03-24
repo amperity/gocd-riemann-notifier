@@ -2,7 +2,7 @@
 <go-plugin id="gocd.riemann.notifier" version="1">
     <about>
         <name>Riemann Notification Plugin</name>
-        <version>0.9-SNAPSHOT</version>
+        <version>0.10-SNAPSHOT</version>
         <target-go-version>19.8.0</target-go-version>
         <description>Plugin to send build notifications to Riemann</description>
         <vendor>
