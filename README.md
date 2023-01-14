@@ -1,7 +1,7 @@
 # gocd-riemann-notifier
 GoCD Plugin that Sends Pipeline events to Riemann
 
-This plugin implements GoCD's Notification Plugin API:
+This plugin implements GoCD's Notification Plugin API version 4.0:
 
 <https://plugin-api.gocd.org/current/notifications/>
 

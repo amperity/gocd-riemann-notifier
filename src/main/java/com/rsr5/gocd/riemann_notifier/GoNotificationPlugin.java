@@ -17,8 +17,11 @@ import io.riemann.riemann.client.RiemannClient;
 import io.riemann.riemann.Proto.Event;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,12 +41,14 @@ public class GoNotificationPlugin implements GoPlugin {
 
     public static final String EXTENSION_TYPE = "notification";
     private static final List<String> goSupportedVersions = Collections
-            .singletonList("1.0");
+            .singletonList("4.0");
     public static final String REQUEST_NOTIFICATIONS_INTERESTED_IN =
             "notifications-interested-in";
     public static final String REQUEST_STAGE_STATUS = "stage-status";
     public static final int SUCCESS_RESPONSE_CODE = 200;
     public static final int INTERNAL_ERROR_RESPONSE_CODE = 500;
+    public static final DateTimeFormatter DATE_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     protected RiemannClient riemann = null;
 
@@ -156,9 +161,9 @@ public class GoNotificationPlugin implements GoPlugin {
     private static Instant safeInstantParse(String s) {
         if (s != null && !s.equals("")) {
             try {
-                return Instant.parse(s);
+                return LocalDateTime.parse(s, DATE_FORMATTER).toInstant(ZoneOffset.UTC);
             } catch(Exception e) {
-                LOGGER.debug("Encountered unparseable instant value", e);
+                LOGGER.warn("Encountered unparseable instant value", e);
             }
         }
         return null;
@@ -260,6 +265,8 @@ public class GoNotificationPlugin implements GoPlugin {
         try {
             List<Event> events = new ArrayList<>();
             StageData notification = new StageData(json);
+
+            LOGGER.debug("Handling stage notification JSON: " + json);
 
             events.add(riemann.event().
                        service(notification.getPipelineServiceName()).
