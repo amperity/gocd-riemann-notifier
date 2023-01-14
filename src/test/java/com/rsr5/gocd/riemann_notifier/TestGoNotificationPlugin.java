@@ -87,6 +87,7 @@ public class TestGoNotificationPlugin {
         verify(eventDSL, times(1)).service("gocd:pipeline1:stage1");
         verify(eventDSL, times(1)).service("gocd:stage-duration");
         verify(eventDSL, times(1)).service("gocd:job-duration");
+        verify(eventDSL, times(1)).service("gocd:job-wait-time");
         verify(eventDSL, times(3)).state("Passed");
     }
 }

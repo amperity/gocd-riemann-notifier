@@ -33,6 +33,7 @@
         {
           "name": "job1",
           "schedule-time": "2011-07-13T19:43:37.100Z",
+          "assign-time": "2011-07-13T19:43:37.100Z",
           "complete-time": "2011-07-13T19:43:37.100Z",
           "state": "Completed",
           "result": "Passed",
