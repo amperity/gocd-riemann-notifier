@@ -88,6 +88,6 @@ public class TestGoNotificationPlugin {
         verify(eventDSL, times(1)).service("gocd:stage-duration");
         verify(eventDSL, times(1)).service("gocd:job-duration");
         verify(eventDSL, times(1)).service("gocd:job-wait-time");
-        verify(eventDSL, times(3)).state("Passed");
+        verify(eventDSL, times(4)).state("Passed");
     }
 }

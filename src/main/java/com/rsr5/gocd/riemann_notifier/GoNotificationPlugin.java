@@ -310,6 +310,7 @@ public class GoNotificationPlugin implements GoPlugin {
                         events.add(riemann.event().
                                    service("gocd:job-wait-time").
                                    time(job.start.getEpochSecond()).
+                                   state(job.result).
                                    metric(job.waitTimeSeconds.get()).
                                    attribute("pipeline", notification.pipeline).
                                    attribute("stage", notification.stage).
