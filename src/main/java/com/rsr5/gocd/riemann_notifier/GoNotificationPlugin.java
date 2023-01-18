@@ -17,14 +17,18 @@ import io.riemann.riemann.client.RiemannClient;
 import io.riemann.riemann.Proto.Event;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -37,12 +41,14 @@ public class GoNotificationPlugin implements GoPlugin {
 
     public static final String EXTENSION_TYPE = "notification";
     private static final List<String> goSupportedVersions = Collections
-            .singletonList("1.0");
+            .singletonList("4.0");
     public static final String REQUEST_NOTIFICATIONS_INTERESTED_IN =
             "notifications-interested-in";
     public static final String REQUEST_STAGE_STATUS = "stage-status";
     public static final int SUCCESS_RESPONSE_CODE = 200;
     public static final int INTERNAL_ERROR_RESPONSE_CODE = 500;
+    public static final DateTimeFormatter DATE_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     protected RiemannClient riemann = null;
 
@@ -155,9 +161,9 @@ public class GoNotificationPlugin implements GoPlugin {
     private static Instant safeInstantParse(String s) {
         if (s != null && !s.equals("")) {
             try {
-                return Instant.parse(s);
+                return LocalDateTime.parse(s, DATE_FORMATTER).toInstant(ZoneOffset.UTC);
             } catch(Exception e) {
-                LOGGER.debug("Encountered unparseable instant value", e);
+                LOGGER.warn("Encountered unparseable instant value", e);
             }
         }
         return null;
@@ -176,6 +182,7 @@ public class GoNotificationPlugin implements GoPlugin {
             public final String name;
             public final String result;
             public final Instant start;
+            public final Optional<Long> waitTimeSeconds;
             public final Instant end;
 
             public JobData(JsonObject json) {
@@ -186,6 +193,17 @@ public class GoNotificationPlugin implements GoPlugin {
                 this.result = safeGetAsString(json, "result");
                 this.start = safeInstantParse(start);
                 this.end = safeInstantParse(end);
+
+                // assign-time is the timestamp when an agent accepted the job and
+                // started preparing it. The period between schedule-time and
+                // assign-time therefore measures the time spent waiting for an
+                // agent.
+                Instant assignTime = safeInstantParse(safeGetAsString(json, "assign-time"));
+                if (this.start != null && assignTime != null) {
+                    this.waitTimeSeconds = Optional.of(ChronoUnit.SECONDS.between(this.start, assignTime));
+                } else {
+                    this.waitTimeSeconds = Optional.empty();
+                }
             }
 
             public Long getDurationInSeconds() {
@@ -248,6 +266,8 @@ public class GoNotificationPlugin implements GoPlugin {
             List<Event> events = new ArrayList<>();
             StageData notification = new StageData(json);
 
+            LOGGER.debug("Handling stage notification JSON: " + json);
+
             events.add(riemann.event().
                        service(notification.getPipelineServiceName()).
                        state(notification.state).
@@ -285,6 +305,18 @@ public class GoNotificationPlugin implements GoPlugin {
                                attribute("job", job.name).
                                attribute("run-id", notification.counter).
                                build());
+
+                    if (job.waitTimeSeconds.isPresent()) {
+                        events.add(riemann.event().
+                                   service("gocd:job-wait-time").
+                                   time(job.start.getEpochSecond()).
+                                   metric(job.waitTimeSeconds.get()).
+                                   attribute("pipeline", notification.pipeline).
+                                   attribute("stage", notification.stage).
+                                   attribute("job", job.name).
+                                   attribute("run-id", notification.counter).
+                                   build());
+                    }
                 }
             }
 

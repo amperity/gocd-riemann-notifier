@@ -12,7 +12,7 @@
         "modifications": [
           {
             "revision": "1",
-            "modified-time": "2015-03-24T14:53:55.127Z",
+            "modified-time": "2015-03-24T14:53:55.127+0000",
             "data": {
 
             }
@@ -27,13 +27,14 @@
       "approved-by": "changes",
       "state": "Passed",
       "result": "Passed",
-      "create-time": "2011-07-13T19:43:37.100Z",
-      "last-transition-time": "2011-07-13T19:43:37.100Z",
+      "create-time": "2023-01-14T06:00:22.558+0000",
+      "last-transition-time": "2011-07-13T19:43:37.100+0000",
       "jobs": [
         {
           "name": "job1",
-          "schedule-time": "2011-07-13T19:43:37.100Z",
-          "complete-time": "2011-07-13T19:43:37.100Z",
+          "schedule-time": "2011-07-13T19:43:37.100+0000",
+          "assign-time": "2011-07-13T19:43:37.100+0000",
+          "complete-time": "2011-07-13T19:43:37.100+0000",
           "state": "Completed",
           "result": "Passed",
           "agent-uuid": "uuid"

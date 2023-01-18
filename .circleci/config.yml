@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/gocd-riemann-notifier
     docker:
-      - image: circleci/openjdk:8-jdk-buster
+      - image: cimg/openjdk:11.0
     steps:
       - checkout
       - restore_cache:
